@@ -5,6 +5,10 @@ import com.endava.entity.MobilePhone;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 
 /**
  * Created by Stas on 22.03.2017.
@@ -17,6 +21,7 @@ public class NumberService {
     }
 
     public MobilePhone createMobilePhone(){
+        System.out.println("NumberService.createMobilePhone: ");
         return new MobilePhone(validateNumber(), checkMoneyAmount());
     }
 
@@ -29,12 +34,12 @@ public class NumberService {
     }
 
     public String validateNumber(){
+        System.out.println("NumberService.validateNumber: ");
         int counter = 0;
         String tmp;
         System.out.println("Enter your phone number: ");
         do{
             tmp = keyboardInput();
-
             if(tmp.matches("[+][(][3][7][3][)]-*[67][089]*-*[0-9]{2}-*[0-9]{2}-*[0-9]{2}")){
                 this.setPhoneNumber(tmp);
                 return tmp;
@@ -59,6 +64,7 @@ public class NumberService {
     }
 
     public int checkMoneyAmount(){
+        System.out.println("NumberService.checkMoneyAmount: ");
         if(this.getPhoneNumber().equals(""))
             return -1;
         int count = 0;
@@ -72,6 +78,7 @@ public class NumberService {
 
                 if (flag == true) {
                     money = Integer.valueOf(tmp);
+                    flag = false;
                 }
             }while(flag);
 
@@ -88,10 +95,14 @@ public class NumberService {
     }
 
     public String keyboardInput(){
+        System.out.println("NumberService.keyboardInput: ");
+        DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+        Date date = new Date();
         String tmp = "";
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         try {
             tmp = br.readLine();
+            System.out.println("Input time: " + dateFormat.format(date));
         }catch (IOException ex){
             System.err.println("Input/Output Exception!");
             ex.printStackTrace();
@@ -100,6 +111,7 @@ public class NumberService {
     }
 
     public boolean checkInputMoney(String string){
+        System.out.println("NumberService.checkInputMoney: ");
         if(string.matches("[0-9]+")){
             return true;
         }
