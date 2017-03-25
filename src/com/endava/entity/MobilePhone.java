@@ -38,8 +38,7 @@ public class MobilePhone {
 
         MobilePhone that = (MobilePhone) o;
 
-        if (mobileAccount != that.mobileAccount) return false;
-        return phoneNumber.equals(that.phoneNumber);
+        return mobileAccount == that.mobileAccount && phoneNumber.equals(that.phoneNumber);
     }
 
     @Override
