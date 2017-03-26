@@ -8,6 +8,7 @@ public class MobilePhone {
     private int mobileAccount;
 
     public MobilePhone() {
+        // empty constructor
     }
 
     public MobilePhone(String phoneNumber, int mobileAccount) {

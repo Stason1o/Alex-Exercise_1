@@ -5,22 +5,36 @@ import com.endava.entity.MobilePhone;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.Arrays;
+import java.util.logging.Logger;
 
 /**
  * Created by Stas on 22.03.2017.
  */
 public class NumberService {
+    private static final Logger log = Logger.getLogger(NumberService.class.getName());
+
+    private static final int PHONE_MAX_ATTEMPTS = 4;
+    private static final int BALANCE_MAX_ATTEMPTS = 3;
+    private static final int MIN_AMOUNT = 50;
+    private static final int MAX_AMOUNT = 500;
+
+
+
+    private static final String[] NUMBER_PATTERNS = {
+            "[+][(][3][7][3][)]-[67][089]-[0-9]{2}-[0-9]{2}-[0-9]{2}",
+            "[+][3][7][3] [67][089] [0-9]{3}[-][0-9]{3}",
+            "[+][3][7][3] [67][089] [0-9]{6}"
+    };
 
     private String phoneNumber;
 
     public NumberService() {
+        // empty constructor
     }
 
-    public MobilePhone createMobilePhone(){
-        return new MobilePhone(validateNumber(), checkMoneyAmount());
+    public MobilePhone createMobilePhone() {
+        return new MobilePhone(enterPhoneNumber(), checkMoneyAmount());
     }
 
     public String getPhoneNumber() {
@@ -31,108 +45,86 @@ public class NumberService {
         this.phoneNumber = phoneNumber;
     }
 
-    private String validateNumber(){
-        System.out.println("NumberService.validateNumber: method will validate input data");
-        printDate();
-        int amountOfInputAttempts = 0;
-        String telephoneNumber;
-        System.out.println("Enter your phone number: ");
-        do{
-            telephoneNumber = keyboardInput();
+    private String enterPhoneNumber() {
+        log.info("NumberService.enterPhoneNumber: method will validate input data");
+        String phoneNumber;
+        int attempts = 0;
 
-            if(telephoneNumber.matches("[+][(][3][7][3][)]-[67][089]-[0-9]{2}-[0-9]{2}-[0-9]{2}")) {
-                this.setPhoneNumber(telephoneNumber);
-                System.out.println("NumberService.validateNumber: method returns input phone number as a string");
-                printDate();
-                return telephoneNumber;
+        log.info("Enter your phone number: ");
+        do {
+            phoneNumber = readLine();
 
-            }else if (telephoneNumber.matches("[+][3][7][3] [67][089] [0-9]{6}")){
-                this.setPhoneNumber(telephoneNumber);
-                System.out.println("NumberService.validateNumber: method returns input phone number as a string");
-                printDate();
-                return telephoneNumber;
-            }else if(telephoneNumber.matches("[+][3][7][3] [67][089] [0-9]{3}[-][0-9]{3}")){
-                this.setPhoneNumber(telephoneNumber);
-                System.out.println("NumberService.validateNumber: method returns input phone number as a string");
-                printDate();
-                return telephoneNumber;
+            if (isValidPhoneNumber(phoneNumber)) {
+                this.phoneNumber = phoneNumber;
+                return this.phoneNumber;
+            } else {
+                log.info("Possible types of number: +373 60 066006 / +(373)-79-85-85-85 / +373 79 666-999");
+                log.warning("Remained attempts: " + (PHONE_MAX_ATTEMPTS - ++attempts));
             }
-            else {
-                amountOfInputAttempts++;
-                System.out.println("Possible types of number:");
-                System.out.println("+373 60 066006 / +(373)-79-85-85-85 / +373 79 666-999");
-                System.out.println("Remained attempts: " + (4 - amountOfInputAttempts));
-                printDate();
-            }
-        }while(amountOfInputAttempts < 4);
+        } while (attempts < PHONE_MAX_ATTEMPTS);
 
-        System.out.println("NumberService.validateNumber: method validated input data and it's wrong =( See you later =)");
-        this.setPhoneNumber("");
-        return "";
+        log.warning("NumberService.enterPhoneNumber: method validated input data and it's wrong =( See you later =)");
+        return phoneNumber;
     }
 
-    private int checkMoneyAmount(){
-        System.out.println("NumberService.checkMoneyAmount: method will check input money");
-        printDate();
-        if(getPhoneNumber().equals(""))
-            return -1;
-        int amountOfAttempts = 0;
-        boolean regexValidator = true;
-        System.out.println("Enter amount of money to charge account:");
-        while(amountOfAttempts < 3) {
-            int amountOfMoney = 0;
-            while(regexValidator) {
-                String keyboardInputAmountOfMoney = keyboardInput();
-                regexValidator = checkInputMoney(keyboardInputAmountOfMoney);
+    private int checkMoneyAmount() {
+        log.info("NumberService.checkMoneyAmount: method will check input money");
+        if (isEmpty(this.phoneNumber))
+            throw new IllegalStateException("Phone number is not provided");
 
-                if (regexValidator) {
-                    amountOfMoney = Integer.valueOf(keyboardInputAmountOfMoney);
-                    regexValidator = false;
-                }
-            }
+        int attempts = 0;
+        int amountOfMoney = 0;
 
-            if(amountOfMoney >= 50 && amountOfMoney <= 500){
-                System.out.println("NumberService.checkMoneyAmount: Input is correct. Proceeding....");
-                printDate();
+        log.info("Enter amount of money to charge account:");
+        while (attempts < BALANCE_MAX_ATTEMPTS) {
+
+            String input = readLine();
+
+            if (isDigit(input))
+                amountOfMoney = Integer.valueOf(input);
+
+            if (amountOfMoney >= MIN_AMOUNT && amountOfMoney <= MAX_AMOUNT) {
+                log.info("NumberService.checkMoneyAmount: Input is correct. Proceeding....");
                 return amountOfMoney;
             } else {
-                amountOfAttempts++;
-                System.out.println("Wrong amount of money. Possible amount 50 - 500");
-                System.out.println("Remained attempts: " + (3 - amountOfAttempts));
-                regexValidator = true;
+                log.info("Wrong amount of money. Possible amount 50 - 500");
+                log.warning("Remained attempts: " + (BALANCE_MAX_ATTEMPTS - ++attempts));
             }
         }
 
-        System.out.println("NumberService.checkMoneyAmount: Wrong input. Sorry. Goodbye");
-        printDate();
-        return -1;
+        log.warning("NumberService.checkMoneyAmount: Wrong input. Sorry. Goodbye");
+        return amountOfMoney;
     }
 
-    private String keyboardInput(){
-        String inputFromConsole = "";
-        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    private static boolean isValidPhoneNumber(String phoneNumber) {
+        log.info("NumberService.isValidPhoneNumber: verifies if number matches any pattern");
+        return Arrays.stream(NUMBER_PATTERNS).anyMatch(phoneNumber::matches);
+    }
+
+    private static String readLine() {
+        log.info("NumberService.readLine: reads string from console");
+        String input = null;
+
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         try {
-            inputFromConsole = br.readLine();
-            printDate();
-        }catch (IOException ex){
-            System.err.println("Input/Output Exception!");
-            ex.printStackTrace();
+            input = reader.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        return inputFromConsole;
+
+        log.info("NumberService.readLine: returns string from console");
+        return input;
     }
 
-    private boolean checkInputMoney(String string){
-        System.out.println("NumberService.checkInputMoney: method checks if input matches regex");
-        printDate();
-        boolean checkIfMatches = (string.matches("[0-9]+"));
-        System.out.println("NumberService.checkInputMoney: method returns true/false ");
-        printDate();
-        return checkIfMatches;
+    private static boolean isEmpty(String string) {
+        return string == null || string.length() == 0;
     }
 
-    private void printDate(){
-        DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-        Date date = new Date();
-        System.out.println("Action taken on: " + dateFormat.format(date));
+    private static boolean isDigit(String string) {
+        log.info("NumberService.isDigit: method checks if input matches regex");
+        boolean matches = (string.matches("[0-9]+"));
+        log.info("NumberService.isDigit: method returns true/false ");
+        return matches;
     }
+
 }
