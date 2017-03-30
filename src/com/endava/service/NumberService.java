@@ -117,6 +117,8 @@ public class NumberService {
     }
 
     private static boolean isEmpty(String string) {
+        log.info("NumberService.isEmpty: method checks if input string is empty");
+        log.info("NumberService.isDigit: method returns true/false ");
         return string == null || string.length() == 0;
     }
 
